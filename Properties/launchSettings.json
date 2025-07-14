@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CacheProxyServer": {
+      "commandName": "Project",
+      "commandLineArgs": "start --port 3000 --origin https://dummyjson.com\n\r\n"
+    }
+  }
+}

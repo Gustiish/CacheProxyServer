@@ -8,14 +8,16 @@ namespace CacheProxyServer
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             
             var builder = CoconaApp.CreateBuilder();
             var app = builder.Build();
             app.AddCommands<Commands>();
 
-            app.RunAsync();
+            Console.WriteLine("App is running");
+
+            await app.RunAsync();
 
 
         }
