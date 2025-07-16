@@ -3,11 +3,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Reflection;
 
 namespace CacheProxyServer
@@ -43,10 +38,26 @@ namespace CacheProxyServer
 
             app.MapGet("{**catchAll}", async (HttpContext context, Forwarder forwarder) =>
             {
-                HttpResponseMessage response = await forwarder.ForwardRequestAsync(context.Request);
+                HttpResponseMessage response = await forwarder.ForwardRequestAsync(context.Request); //För nuvarande skickar denna en ínkorrekt GET metod.
 
-                var content = await response.Content.ReadAsStringAsync();
-                return Results.Ok(content);
+                context.Response.StatusCode = (int)response.StatusCode;
+
+                foreach (var header in response.Headers)
+                {
+                    context.Response.Headers[header.Key] = header.Value.ToArray();
+                }
+
+                foreach (var header in response.Content.Headers)
+                {
+                    context.Response.Headers[header.Key] = header.Value.ToArray();
+                }
+
+                context.Response.Headers.Remove("transfer-encoding");
+
+                var content = await response.Content.ReadAsStreamAsync();
+                await content.CopyToAsync(context.Response.Body);
+
+
             });
 
             await app.RunAsync();
