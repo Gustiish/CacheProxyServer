@@ -1,4 +1,5 @@
 ﻿using Cocona;
+using Cocona.Builder;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,13 +12,15 @@ namespace CacheProxyServer
         static async Task Main(string[] args)
         {
             
-            var builder = CoconaApp.CreateBuilder();
-            var app = builder.Build();
-            app.AddCommands<Commands>();
 
-            Console.WriteLine("App is running");
 
-            await app.RunAsync();
+            CoconaAppBuilder builder = CoconaApp.CreateBuilder();
+         
+            CoconaApp coconaApp = builder.Build();
+            
+            coconaApp.AddCommands<Commands>();
+
+            await coconaApp.RunAsync();
 
 
         }

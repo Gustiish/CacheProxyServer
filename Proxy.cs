@@ -1,16 +1,17 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http.Headers;
+using StackExchange.Redis;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace CacheProxyServer
 {
-    internal class Forwarder
+    internal class Proxy
     {
         private readonly HttpClient _httpClient;
-        private readonly IMemoryCache _cache;
+        private readonly IDistributedCache _cache;
 
-
-        public Forwarder(HttpClient httpClient, IMemoryCache cache)
+        public Proxy(HttpClient httpClient, IDistributedCache cache)
         {
             _httpClient = httpClient;
             _cache = cache;
@@ -26,8 +27,8 @@ namespace CacheProxyServer
 
            
             string key = request.Path + request.QueryString;
-            _cache.Set(key, response, TimeSpan.FromMinutes(5));
-            Console.WriteLine($"X-Cache: MISS");
+            //Add the response to the cache here
+
 
             string body = await response.Content.ReadAsStringAsync();
 
@@ -36,15 +37,8 @@ namespace CacheProxyServer
                 Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"), 
             };
 
-            foreach (var headers in response.Headers)
-            {
-                newResponse.Headers.TryAddWithoutValidation(headers.Key, headers.Value);
-            }
-
-            foreach (var headers in response.Content.Headers)
-            {
-                newResponse.Content.Headers.TryAddWithoutValidation(headers.Key, headers.Value);
-            }
+            newResponse.Headers.Clear();
+            newResponse.Headers.Add("X-Cache", "MISS");
 
             return newResponse;
         }
@@ -56,7 +50,8 @@ namespace CacheProxyServer
             string key = request.Path + request.QueryString;
             if (_cache.TryGetValue(key, out cachedResponse))
             {
-                Console.WriteLine($"X-Cache: HIT");
+                cachedResponse.Headers.Clear();
+                cachedResponse.Headers.Add("X-Cache", "HIT");
                 return true;
             }
             else
@@ -64,5 +59,12 @@ namespace CacheProxyServer
                 return false;
             }
         }
+
+        public void ClearCache()
+        {
+            
+        }
+
+       
     }
 }
