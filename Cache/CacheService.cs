@@ -8,11 +8,12 @@ using LiteDB;
 
 namespace CacheProxyServer
 {
-    internal class CacheService : ICacheService
+    internal class CacheService<T> : ICacheService<T> where T : class
     {
         private readonly IDistributedCache distributedCache;
         private readonly LiteDatabase liteDatabase;
         private readonly ILiteCollection<BsonDocument> collection;
+       
 
         public CacheService(IDistributedCache distributedCache)
         {
@@ -21,7 +22,7 @@ namespace CacheProxyServer
             this.liteDatabase = new LiteDatabase(liteDbFilepath);
         }
 
-        public async Task<T?> GetAsync<T>(string key)
+        public async Task<T?> GetAsync(string key)
         {
             var bytes = await distributedCache.GetAsync(key);
             if (bytes != null)
@@ -31,11 +32,10 @@ namespace CacheProxyServer
             }
 
             using var db = new LiteDatabase(GetFilePath());
-            using (ILiteCollection<T> collection = db.GetCollection<T>("CacheHttpDTO"))
-            {
-                var cache = collection.FindOne(x => x.Id == key);
-            }
-            
+            var value = db.GetCollection<T>().FindById(key);
+
+            return System.Text.Json.JsonSerializer.Deserialize<T>(value);
+
 
         }
 
@@ -44,7 +44,7 @@ namespace CacheProxyServer
             throw new NotImplementedException();
         }
 
-        public Task SetAsync<T>(string key, T value, TimeSpan? expiry = null)
+        public Task SetAsync(string key, T value, TimeSpan? expiry = null)
         {
             throw new NotImplementedException();
         }
